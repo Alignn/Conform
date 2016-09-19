@@ -1,0 +1,37 @@
+Alright so here's the idea
+
+Conform is a simple game consisting of a grid of red squares. Click a square and it'll turn green, and so will nearby
+squares - but the effect diminishes as it radiates outward, so the adjacent squares only turn 80% green, the second next 
+adjacent 60%, etc. % numbers subject to change.
+Each time you click, each square is influenced by it's neighbors, so the green-ness fades quickly for the more distant
+squares, and even the clicked ones fade unless promptly surrounded by other clicked ones.
+It might turn out it's just impossible to change all squares to green, or it might turn out to be inevitable. Figuring out
+balanced % numbers might not be possible. We'll see.
+
+pseudo-code:
+
+x,y from input
+green = GREEN_AFTER_CLICKED
+loops = GREEN_AFTER_CLICKED/GREEN_DECAY_FROM_DISTANCE
+
+for i = 0 to loops
+	for j = 0 to i
+
+		square = squares.get(x-i,y-j) //squares.get(x,y) checks if x,y out of bounds and if so returns null.
+		if square != null
+			square.setColor(255-green, green, 0)
+		square = squares.get(x-i,y+j)
+		if square != null
+			square.setColor(255-green, green, 0)
+		square = squares.get(x+i,y-j)
+		if square != null
+			square.setColor(255-green, green, 0)
+		square = squares.get(x+i,y+j)
+		if square != null
+			square.setColor(255-green, green, 0)
+			
+	green = green - GREEN_DECAY_FROM_DISTANCE
+	
+
+	
+ 
