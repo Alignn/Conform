@@ -15,23 +15,52 @@ green = GREEN_AFTER_CLICKED
 loops = GREEN_AFTER_CLICKED/GREEN_DECAY_FROM_DISTANCE
 
 for i = 0 to loops
+{
 	for j = 0 to i
-
-		square = squares.get(x-i,y-j) //squares.get(x,y) checks if x,y out of bounds and if so returns null.
+	{
+		square = squares.get(x-i,y-i+j) //from upper left, downwards
+		if square != null
+			square.setColor(255-green, green, 0) //assuming color is 0-255
+		square = squares.get(x-i+j,y-i) //from upper left, rightwards
 		if square != null
 			square.setColor(255-green, green, 0)
-		square = squares.get(x-i,y+j)
+		square = squares.get(x+i,y+i-j) //from lower right, upwards
 		if square != null
 			square.setColor(255-green, green, 0)
-		square = squares.get(x+i,y-j)
+		square = squares.get(x+i-j,y+i) //from lower right, leftwards
 		if square != null
 			square.setColor(255-green, green, 0)
-		square = squares.get(x+i,y+j)
-		if square != null
-			square.setColor(255-green, green, 0)
-			
+	}		
 	green = green - GREEN_DECAY_FROM_DISTANCE
-	
+}
 
-	
- 
+We'll need a class for the individual squares to easily handle setting colors, 
+and one for the grid to easily handle out of bounds squares.  
+Let's start with the squares to get straight to some way to display colored squares that can react to clicks.
+
+Then we need to implement the eponymous conforming: how each square changes color according to its neighbors.
+Before setting colors by clicking:
+
+for i=0 to GRID_WIDTH*GRID_HEIGHT
+{
+	//get average colors of surrounding squares
+	sum=0
+	neighbors=0
+	xPos = i%GRID_WIDTH
+	yPos = floor(i/GRID_HEIGHT)
+	currentSquare = squares.get(xPos,yPos)
+	for x=xPos-1 to xPos+1
+	{
+		for y=yPos-1 to yPos+1
+		{
+			square = squares.get(x,y)
+			if square != null && square != currentSquare
+			{
+				sum += square.getGreen()
+				neighbors++
+			}
+		}
+	}
+	average = sum/neighbors
+	currentSquare.setColor(255-average,average,0)
+}
