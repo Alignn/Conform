@@ -9,15 +9,20 @@ import java.awt.HeadlessException;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 
+import javax.swing.BorderFactory;
 import javax.swing.JApplet;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 public final class PlayConform extends JApplet implements MouseListener {
+	private static final long serialVersionUID = -2404586489507281325L;
 	private Button waitButton;
 	private JFrame mainFrame;
 	private JPanel gridPanel;
 	private Square[][] grid;
+	private static int gridWidth=25;
+	private static int gridHeight=25;
+	private static int greenDecay=100; //when a square is clicked, surrounding squares are also colored green, but this much less
 	
 	public PlayConform() throws HeadlessException {
 	}
@@ -30,8 +35,8 @@ public final class PlayConform extends JApplet implements MouseListener {
         waitButton = new Button("Wait");
         waitButton.addMouseListener(this);
         gridPanel = new JPanel(new GridLayout(height,width));
-        for (int x=0; x<width; x++) {
-			for (int y=0; y<height; y++) {
+        for (int x = 0  ;  x < width  ;  x++) {
+			for (int y = 0  ;  y < height  ;  y++) {
 				grid[x][y] = new Square(x,y,this);
 				gridPanel.add(grid[x][y]);
 			}
@@ -40,86 +45,106 @@ public final class PlayConform extends JApplet implements MouseListener {
         //Set up the content pane.
         mainFrame.add(gridPanel);
         mainFrame.add(waitButton);
-        mainFrame.setPreferredSize(new Dimension(450,400));
+        mainFrame.setPreferredSize(new Dimension(450,420));
         
         //Display the window.
         mainFrame.pack();
         mainFrame.setVisible(true);
 	}
 
-	public void init() {
-		javax.swing.SwingUtilities.invokeLater(new Runnable() {
-            public void run() {
-                setupGame(25,25); //width, height of grid (in game squares, not pixels)
-            }
-        });
-	}
-
-	public void mouseClicked(MouseEvent e) {
-		if(e.getSource()==waitButton)
-		{
-			//adjust colour of all grid squares to the average of their neighbours
-			for (Square[] squareRow : grid)
-			{
-				for (Square square : squareRow)
-				{
-					/*sum=0 
-					neighbors=0
-					xPos = i%GRID_WIDTH
-					yPos = floor(i/GRID_HEIGHT)
-					currentSquare = squares.get(xPos,yPos)
-					for x=xPos-1 to xPos+1
-					{
-						for y=yPos-1 to yPos+1
-						{
-							square = squares.get(x,y)
-							if square != null && square != currentSquare //TODO: fuck... now i remember why i wanted a SquareGrid... need to check for out of bounds squares.
-							{
-								sum += square.getGreen()
-								neighbors++
+	public void averageOutColours() {
+		//make temporary new grid where all changes are made
+		Square[][] newGrid = new Square[gridWidth][gridHeight];
+		for (int x = 0  ;  x < gridWidth  ;  x++) {
+			for (int y = 0  ;  y < gridHeight  ;  y++) {
+				newGrid[x][y] = new Square(x,y,this);
+			}
+		}
+		
+		//adjust colour of all grid squares to the average of their neighbours
+		for (Square[] squareRow : grid) {
+			for (Square square : squareRow) {
+				int sum=0;
+				int neighbours=0;
+				int xPos=square.getXPos();
+				int yPos=square.getYPos();
+				for (int x = xPos-1  ;  x <= xPos+1  ;  x++) {
+					if (x >= 0  &&  x < gridWidth) {
+						for (int y = yPos-1  ;  y <= yPos+1  ;  y++) {
+							if (y >= 0  &&  y < gridHeight  &&  !square.equals(grid[x][y])) {
+								neighbours++;
+								sum+=grid[x][y].getBackground().getGreen();
 							}
 						}
 					}
-					average = sum/neighbors
-					currentSquare.setColor(255-average,average,0)*/
+				}
+				int average=sum/neighbours;
+				newGrid[xPos][yPos].setBackground(new Color(255-average,average,0));
+			}
+		}
+		for (int x = 0  ;  x < gridWidth  ;  x++) {
+			for (int y = 0  ;  y < gridHeight  ;  y++) {
+				grid[x][y].setBackground(newGrid[x][y].getBackground());
+			}
+		}
+	}
+	
+	
+	public void mouseClicked(MouseEvent e) {
+		if(e.getSource()==waitButton)
+		{
+			averageOutColours();
+		}
+	}
+	public void mouseEntered(MouseEvent e) {
+		if (e.getSource() instanceof JPanel)
+		{
+			((JPanel)e.getSource()).setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.GREEN));
+		}
+	}
+	public void mouseExited(MouseEvent e) {
+		if (e.getSource() instanceof JPanel)
+		{
+			((JPanel)e.getSource()).setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.BLACK));
+		}
+	}
+	public void mousePressed(MouseEvent e) {
+		if (e.getSource() instanceof Square) {
+			averageOutColours();
+			
+			//set colour of clicked square to green, and ditto for neighbours and neighbours' neighbours (gradually less so)
+			Square square = (Square) e.getSource();
+			int xPos=square.getXPos();
+			int yPos=square.getYPos();
+			int loops=255/greenDecay;
+			for (int i = 0  ;  i <= loops  ;  i++) {
+				for (int x = xPos-i  ;  x <= xPos+i  ;  x++) {
+					if (x >= 0  &&  x < gridWidth) {
+						for (int y = yPos-i  ;  y <= yPos+i  ;  y++) {
+							if (y >= 0  &&  y < gridHeight) {
+								int green = 255 - i*greenDecay;
+								green += grid[x][y].getBackground().getGreen();
+								green = Integer.min(green, 255);
+								int red = grid[x][y].getBackground().getRed();
+								red -= green;
+								red = Integer.max(red, 0);
+								
+								grid[x][y].setBackground(new Color(red,green,0));
+							}
+						}
+					}
 				}
 			}
 		}
-		else if (e.getSource() instanceof Square)
-		{
-			//set colour of clicked square to green, and ditto (gradually less so) for neighbours and neighbours' neighbours
-			Square clickedSquare = (Square) e.getSource();
-			clickedSquare.setBackground(Color.GREEN);
-			
-			/*for i = 0 to loops
-			{
-				for j = 0 to i
-				{
-					square = squares.get(x-i,y-i+j) //from upper left, downwards
-					if square != null
-						square.setColor(255-green, green, 0) //assuming color is 0-255
-					square = squares.get(x-i+j,y-i) //from upper left, rightwards
-					if square != null
-						square.setColor(255-green, green, 0)
-					square = squares.get(x+i,y+i-j) //from lower right, upwards
-					if square != null
-						square.setColor(255-green, green, 0)
-					square = squares.get(x+i-j,y+i) //from lower right, leftwards
-					if square != null
-						square.setColor(255-green, green, 0)
-				}		
-				green = green - GREEN_DECAY_FROM_DISTANCE
-			}*/
-		}
-		mainFrame.validate();
-	}
-	public void mouseEntered(MouseEvent e) {
-	}
-	public void mouseExited(MouseEvent e) {
-	}
-	public void mousePressed(MouseEvent e) {
 	}
 	public void mouseReleased(MouseEvent e) {
 	}
 
+	public void init() {
+		javax.swing.SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                setupGame(gridWidth,gridHeight); //width, height of grid (in game squares, not pixels)
+            }
+        });
+	}
 }
