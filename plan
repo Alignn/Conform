@@ -1,3 +1,9 @@
+2016-09-30: Plan revised. SquareGrid unnecessary, moving straight into main applet. Oh yeah, also it's gonna be an applet
+because I've worked with those in the past.
+
+
+
+
 Alright so here's the idea
 
 Conform is a simple game consisting of a grid of red squares. Click a square and it'll turn green, and so will nearby
